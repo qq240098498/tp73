@@ -9,6 +9,9 @@ const MAX_TRANSLATION_LENGTH = 200;
 const MAX_NOTE_LENGTH = 200;
 const MAX_OPERATOR_LENGTH = 40;
 const UNNAMED = '未署名';
+const TERM_TYPES = ['unify', 'banned'];
+const TERM_SCOPE_ALL = 'all';
+const TERM_SCOPE_LANGUAGES = 'languages';
 
 // 初始数据：四种语言、四个模块的十五条文案。繁体与英语故意留了几条没译，
 // 日语整条语言处于停用状态，英语里还有一条把 {minutes} 占位符写丢了
@@ -229,6 +232,40 @@ function seedData() {
         updatedAt: '2026-09-12T03:25:00.000Z',
       },
     ],
+    termRules: [
+      {
+        id: 'term-2001',
+        type: 'unify',
+        from: '帐号',
+        to: '账号',
+        scopeType: 'languages',
+        languages: ['zh-CN'],
+        note: '简体中文里账号统一用贝字旁的“账”',
+        createdAt: '2026-09-12T08:00:00.000Z',
+        updatedAt: '2026-09-12T08:00:00.000Z',
+      },
+      {
+        id: 'term-2002',
+        type: 'unify',
+        from: '網絡',
+        to: '網路',
+        scopeType: 'languages',
+        languages: ['zh-TW'],
+        note: '繁体中文（台湾）统一用“網路”的写法',
+        createdAt: '2026-09-12T08:05:00.000Z',
+        updatedAt: '2026-09-12T08:05:00.000Z',
+      },
+      {
+        id: 'term-2003',
+        type: 'banned',
+        term: '开小差',
+        scopeType: 'languages',
+        languages: ['zh-CN'],
+        note: '口语化说法，不允许出现在正式文案里',
+        createdAt: '2026-09-12T08:10:00.000Z',
+        updatedAt: '2026-09-12T08:10:00.000Z',
+      },
+    ],
   };
 }
 
@@ -268,7 +305,32 @@ function normalizeEntry(item, fallbackIndex) {
   };
 }
 
-// 整份数据保证 languages 与 entries 结构一致；默认语言有且只有一个
+// 把单条用语规则整理成固定结构。字段缺失或类型不对时只保留能识别的部分，
+// 语言是否登记过、两种写法是否相同这类业务校验由 terminology 模块负责
+function normalizeTermRule(item, fallbackIndex) {
+  const source = item && typeof item === 'object' ? item : {};
+  const createdAt = typeof source.createdAt === 'string' && source.createdAt ? source.createdAt : new Date().toISOString();
+  const type = source.type === 'banned' ? 'banned' : 'unify';
+  const scopeType = source.scopeType === 'all' ? 'all' : 'languages';
+  const languages = Array.isArray(source.languages)
+    ? [...new Set(source.languages.filter((code) => typeof code === 'string' && code.trim()).map((code) => code.trim()))]
+    : [];
+  const base = {
+    id: typeof source.id === 'string' && source.id ? source.id : `term-restored-${fallbackIndex + 1}`,
+    type,
+    scopeType,
+    languages: scopeType === 'all' ? [] : languages,
+    note: typeof source.note === 'string' ? source.note : '',
+    createdAt,
+    updatedAt: typeof source.updatedAt === 'string' && source.updatedAt ? source.updatedAt : createdAt,
+  };
+  if (type === 'unify') {
+    return { ...base, from: typeof source.from === 'string' ? source.from : '', to: typeof source.to === 'string' ? source.to : '' };
+  }
+  return { ...base, term: typeof source.term === 'string' ? source.term : '' };
+}
+
+// 整份数据保证 languages、entries 与 termRules 结构一致；默认语言有且只有一个
 function normalize(raw) {
   const source = raw && typeof raw === 'object' ? raw : {};
   const seed = seedData();
@@ -311,7 +373,27 @@ function normalize(raw) {
         })
     : [];
 
-  return { languages: dedupedLanguages, entries };
+  // 旧数据没有 termRules 这一段时给一份种子规则，显式写成空数组时尊重用户的清空动作。
+  // 规则里挂的语言如果已经不在语言清单里，这里直接摘掉；摘掉后为空且不是“全部语言”，
+  // 说明规则失去了生效范围，交由 terminology 的校验在下次保存时指出
+  const termRules = Array.isArray(source.termRules)
+    ? (() => {
+        const seenIds = new Set();
+        return source.termRules
+          .map((item, index) => normalizeTermRule(item, index))
+          .filter((rule) => {
+            if (!rule.id || seenIds.has(rule.id)) return false;
+            seenIds.add(rule.id);
+            return true;
+          })
+          .map((rule) => {
+            if (rule.scopeType === 'all') return rule;
+            return { ...rule, languages: rule.languages.filter((code) => known.has(code)) };
+          });
+      })()
+    : seed.termRules;
+
+  return { languages: dedupedLanguages, entries, termRules };
 }
 
 // 读取数据文件：文件缺失或内容损坏时回落到初始数据并立刻补写
@@ -341,9 +423,13 @@ module.exports = {
   normalize,
   normalizeLanguage,
   normalizeEntry,
+  normalizeTermRule,
   MAX_TRANSLATION_LENGTH,
   MAX_NOTE_LENGTH,
   MAX_OPERATOR_LENGTH,
   UNNAMED,
+  TERM_TYPES,
+  TERM_SCOPE_ALL,
+  TERM_SCOPE_LANGUAGES,
   DATA_FILE,
 };

@@ -1,5 +1,6 @@
 const { load, save } = require('./store');
 const { ApiError, pickText, pickFlag } = require('./errors');
+const terminology = require('./terminology');
 
 // 语言代码按 zh-CN、en-US 这样的写法登记：小写字母起头，短横线之后跟地区或变体
 const CODE_PATTERN = /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;
@@ -122,6 +123,9 @@ function deleteLanguage(code) {
     const samples = used.slice(0, 3).map((item) => item.key).join('、');
     throw new ApiError(409, 'LANGUAGE_IN_USE', `还有 ${used.length} 条文案填了这种语言的译文，例如 ${samples}，请先清空这些译文再删除`, 'code');
   }
+
+  // 用语规则若把生效范围指定到这种语言，同样要先改范围再删
+  terminology.assertLanguageFreeForRules(data, found.code);
 
   data.languages = data.languages.filter((item) => item.code !== found.code);
   data.entries = data.entries.map((item) => {

@@ -237,5 +237,45 @@
       "createdAt": "2026-09-11T06:15:00.000Z",
       "updatedAt": "2026-09-12T03:25:00.000Z"
     }
+  ],
+  "termRules": [
+    {
+      "id": "term-2001",
+      "type": "unify",
+      "scopeType": "languages",
+      "languages": [
+        "zh-CN"
+      ],
+      "note": "简体中文里账号统一用贝字旁的“账”",
+      "createdAt": "2026-09-12T08:00:00.000Z",
+      "updatedAt": "2026-09-12T08:00:00.000Z",
+      "from": "帐号",
+      "to": "账号"
+    },
+    {
+      "id": "term-2002",
+      "type": "unify",
+      "scopeType": "languages",
+      "languages": [
+        "zh-TW"
+      ],
+      "note": "繁体中文（台湾）统一用“網路”的写法",
+      "createdAt": "2026-09-12T08:05:00.000Z",
+      "updatedAt": "2026-09-12T08:05:00.000Z",
+      "from": "網絡",
+      "to": "網路"
+    },
+    {
+      "id": "term-2003",
+      "type": "banned",
+      "scopeType": "languages",
+      "languages": [
+        "zh-CN"
+      ],
+      "note": "口语化说法，不允许出现在正式文案里",
+      "createdAt": "2026-09-12T08:10:00.000Z",
+      "updatedAt": "2026-09-12T08:10:00.000Z",
+      "term": "开小差"
+    }
   ]
 }

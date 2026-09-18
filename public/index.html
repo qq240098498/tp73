@@ -91,6 +91,93 @@
         </div>
       </form>
     </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>用语清单</h2>
+        <div class="filters">
+          <button type="button" id="term-new">新增规则</button>
+        </div>
+      </div>
+      <div class="panel-tip term-tip">规则分两类：一类写明现在常见的写法与应当改成的写法，另一类列出一律不能出现的词语；两类规则都要指定生效范围（全部语言或其中几种）。规则保存时当场校验，不成立会指出是哪一条的问题。</div>
+
+      <form class="check-bar" id="term-check-bar" autocomplete="off">
+        <label>检查模块
+          <select id="term-filter-module"><option value="">全部模块</option></select>
+        </label>
+        <fieldset class="scope-pick" id="term-check-scope" data-field="checkLanguages">
+          <legend>语言范围</legend>
+          <label class="check"><input type="checkbox" id="term-check-all" checked> 全部语言</label>
+          <span class="lang-checks" id="term-check-langs"></span>
+        </fieldset>
+        <button type="submit" id="term-check-run">执行检查</button>
+      </form>
+      <div class="check-summary hidden" id="term-hit-summary"></div>
+      <div class="table-wrap">
+        <table class="grid">
+          <thead>
+            <tr>
+              <th>模块</th>
+              <th>文案键</th>
+              <th>语言</th>
+              <th>命中片段</th>
+              <th>命中的规则</th>
+              <th>译文中的位置</th>
+              <th>建议</th>
+            </tr>
+          </thead>
+          <tbody id="term-hit-body"></tbody>
+        </table>
+      </div>
+      <p class="empty-tip" id="term-hit-empty">选定模块与语言范围后执行检查，命中结果会逐条列在这里</p>
+
+      <h3 class="subhead">规则清单</h3>
+      <div class="table-wrap">
+        <table class="grid">
+          <thead>
+            <tr>
+              <th>类型</th>
+              <th>规则内容</th>
+              <th>生效范围</th>
+              <th>说明</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="term-rule-body"></tbody>
+        </table>
+      </div>
+      <p class="empty-tip hidden" id="term-rule-empty">还没有任何用语规则</p>
+
+      <form class="term-form hidden" id="term-form" autocomplete="off">
+        <h3 id="term-form-title">新增规则</h3>
+        <div class="form-row">
+          <label class="term-type-field" data-field="type">规则类型
+            <select id="term-type">
+              <option value="unify">应当统一的写法（常见写法 → 目标写法）</option>
+              <option value="banned">一律不能出现的词语</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-row" id="term-unify-fields">
+          <label data-field="from">现在常见的写法<input id="term-from" placeholder="例如 帐号" maxlength="60"></label>
+          <label data-field="to">应当改成的写法<input id="term-to" placeholder="例如 账号" maxlength="60"></label>
+        </div>
+        <div class="form-row hidden" id="term-banned-fields">
+          <label class="full" data-field="term">一律不能出现的词语<input id="term-word" placeholder="例如 开小差" maxlength="60"></label>
+        </div>
+        <fieldset class="scope-box" id="term-scope" data-field="languages">
+          <legend>生效范围</legend>
+          <label class="check"><input type="radio" name="term-scope-type" value="all" id="term-scope-all" checked> 全部语言</label>
+          <label class="check"><input type="radio" name="term-scope-type" value="languages" id="term-scope-langs"> 指定其中几种语言</label>
+          <div class="lang-checks" id="term-lang-checks"></div>
+        </fieldset>
+        <label class="full" data-field="note">规则说明（可选）<input id="term-note" placeholder="这条规则为什么要这么定" maxlength="200"></label>
+        <div class="form-actions">
+          <button type="submit">保存规则</button>
+          <button type="button" id="term-cancel" class="ghost">取消</button>
+        </div>
+      </form>
+    </section>
   </main>
 
   <script src="app.js"></script>

@@ -5,6 +5,8 @@ const state = {
   entries: [],
   modules: [],
   editingId: '',
+  termRules: [],
+  editingRuleId: '',
 };
 
 const el = (id) => document.getElementById(id);
@@ -47,13 +49,15 @@ function clearFieldMarks() {
   document.querySelectorAll('.invalid').forEach((node) => node.classList.remove('invalid'));
 }
 
-// 把出错位置标到具体输入项上：语言区与文案区共用一套标记
+// 把出错位置标到具体输入项上：语言区、文案区、用语区共用一套标记；
+// 同名输入项可能在多个表单里各有一个（如备注），优先标到当前可见的那一个
 function markField(field) {
   if (!field) return;
-  const target = document.querySelector(`[data-field="${field}"]`);
-  if (!target) return;
-  target.classList.add('invalid');
-  const input = target.tagName === 'INPUT' || target.tagName === 'SELECT' ? target : target.querySelector('input, select');
+  const targets = Array.from(document.querySelectorAll(`[data-field="${field}"]`));
+  if (!targets.length) return;
+  const visible = targets.find((node) => !node.closest('.hidden') && node.offsetParent !== null) || targets[0];
+  visible.classList.add('invalid');
+  const input = visible.tagName === 'INPUT' || visible.tagName === 'SELECT' ? visible : visible.querySelector('input, select');
   if (input) input.focus();
 }
 
@@ -101,6 +105,7 @@ async function loadLanguages() {
   state.languages = payload.languages || [];
   renderLanguages();
   renderTranslationInputs();
+  renderTermLangOptions();
 }
 
 async function loadEntries() {
@@ -118,12 +123,18 @@ async function loadEntries() {
 }
 
 function renderModules() {
-  const select = el('filter-module');
-  const current = select.value;
-  const rows = ['<option value="">全部模块</option>']
-    .concat(state.modules.map((item) => `<option value="${escapeHtml(item.module)}">${escapeHtml(item.module)}（${item.count}）</option>`));
-  select.innerHTML = rows.join('');
-  if (state.modules.some((item) => item.module === current)) select.value = current;
+  const fill = (select, current) => {
+    const rows = ['<option value="">全部模块</option>']
+      .concat(state.modules.map((item) => `<option value="${escapeHtml(item.module)}">${escapeHtml(item.module)}（${item.count}）</option>`));
+    select.innerHTML = rows.join('');
+    if (state.modules.some((item) => item.module === current)) select.value = current;
+  };
+  const entrySelect = el('filter-module');
+  const termSelect = el('term-filter-module');
+  const entryCurrent = entrySelect.value;
+  const termCurrent = termSelect.value;
+  fill(entrySelect, entryCurrent);
+  fill(termSelect, termCurrent);
 }
 
 function renderLanguages() {
@@ -334,6 +345,265 @@ document.addEventListener('click', async (event) => {
   }
 });
 
+// ---------- 用语清单 ----------
+
+async function loadTermRules() {
+  const payload = await request('/api/term-rules');
+  state.termRules = payload.rules || [];
+  renderTermRules();
+}
+
+function languageName(code) {
+  const found = state.languages.find((item) => item.code === code);
+  return found ? `${found.name}（${code}）` : code;
+}
+
+function scopeText(rule) {
+  if (rule.scopeType === 'all') return '全部语言';
+  return rule.languages.map(languageName).join('、');
+}
+
+function renderTermRules() {
+  const body = el('term-rule-body');
+  body.innerHTML = state.termRules.map((rule) => {
+    const typeTag = rule.type === 'unify'
+      ? '<span class="tag term-unify">统一写法</span>'
+      : '<span class="tag term-banned">禁用词</span>';
+    const content = rule.type === 'unify'
+      ? `「${escapeHtml(rule.from)}」<span class="arrow">→</span>「${escapeHtml(rule.to)}」`
+      : `「${escapeHtml(rule.term)}」`;
+    return `<tr>
+      <td>${typeTag}</td>
+      <td class="term-content">${content}</td>
+      <td class="scope-cell">${escapeHtml(scopeText(rule))}</td>
+      <td class="note-cell">${escapeHtml(rule.note)}</td>
+      <td class="actions">
+        <button type="button" class="link" data-term-edit="${escapeHtml(rule.id)}">编辑</button>
+        <button type="button" class="link danger" data-term-delete="${escapeHtml(rule.id)}">删除</button>
+      </td>
+    </tr>`;
+  }).join('');
+  el('term-rule-empty').classList.toggle('hidden', state.termRules.length > 0);
+}
+
+// 语言勾选项同时服务于检查条与规则表单；已选状态由调用方在生成后恢复
+function langCheckboxes(containerId, name, disabled) {
+  const box = el(containerId);
+  box.innerHTML = state.languages.map((item) => {
+    const suffix = item.enabled ? '' : '<span class="tag off">已停用</span>';
+    return `<label class="check lang-pick">
+      <input type="checkbox" name="${name}" value="${escapeHtml(item.code)}"${disabled ? ' disabled' : ''}>
+      <span class="mono">${escapeHtml(item.code)}</span> ${suffix}
+    </label>`;
+  }).join('');
+}
+
+function renderTermLangOptions() {
+  const allChecked = el('term-check-all').checked;
+  langCheckboxes('term-check-langs', 'check-lang', allChecked);
+  syncTermFormLangs();
+}
+
+// 规则表单里的语言勾选区只在“指定几种语言”时可用
+function syncTermFormLangs(checked) {
+  const specify = el('term-scope-langs').checked;
+  const box = el('term-lang-checks');
+  const previous = new Set();
+  box.querySelectorAll('input').forEach((input) => { if (input.checked) previous.add(input.value); });
+  langCheckboxes('term-lang-checks', 'rule-lang', !specify);
+  const wanted = checked || previous;
+  box.querySelectorAll('input').forEach((input) => {
+    input.checked = wanted.has(input.value);
+  });
+}
+
+function currentRuleType() {
+  return el('term-type').value;
+}
+
+function toggleRuleTypeFields() {
+  const unify = currentRuleType() === 'unify';
+  el('term-unify-fields').classList.toggle('hidden', !unify);
+  el('term-banned-fields').classList.toggle('hidden', unify);
+}
+
+function openRuleForm(rule) {
+  state.editingRuleId = rule ? rule.id : '';
+  el('term-form-title').textContent = rule ? '编辑规则' : '新增规则';
+  el('term-type').value = rule ? rule.type : 'unify';
+  el('term-from').value = rule && rule.type === 'unify' ? rule.from : '';
+  el('term-to').value = rule && rule.type === 'unify' ? rule.to : '';
+  el('term-word').value = rule && rule.type === 'banned' ? rule.term : '';
+  el('term-note').value = rule ? rule.note : '';
+  if (rule) {
+    el('term-scope-all').checked = rule.scopeType === 'all';
+    el('term-scope-langs').checked = rule.scopeType !== 'all';
+    syncTermFormLangs(new Set(rule.scopeType === 'all' ? [] : rule.languages));
+  } else {
+    el('term-scope-all').checked = true;
+    el('term-scope-langs').checked = false;
+    syncTermFormLangs(new Set());
+  }
+  toggleRuleTypeFields();
+  el('term-form').classList.remove('hidden');
+  el('term-type').focus();
+}
+
+function closeRuleForm() {
+  state.editingRuleId = '';
+  el('term-form').classList.add('hidden');
+  clearFieldMarks();
+}
+
+function selectedRuleLanguages() {
+  return Array.from(document.querySelectorAll('#term-lang-checks input:checked')).map((input) => input.value);
+}
+
+async function submitTermRule(event) {
+  event.preventDefault();
+  clearNotice();
+  clearFieldMarks();
+  const type = currentRuleType();
+  const payload = {
+    type,
+    scopeType: el('term-scope-all').checked ? 'all' : 'languages',
+    languages: selectedRuleLanguages(),
+    note: el('term-note').value,
+  };
+  if (type === 'unify') {
+    payload.from = el('term-from').value;
+    payload.to = el('term-to').value;
+  } else {
+    payload.term = el('term-word').value;
+  }
+  const editing = state.editingRuleId;
+  try {
+    if (editing) {
+      await request(`/api/term-rules/${encodeURIComponent(editing)}`, { method: 'PATCH', body: JSON.stringify(payload) });
+      notify('用语规则已保存', 'ok');
+    } else {
+      await request('/api/term-rules', { method: 'POST', body: JSON.stringify(payload) });
+      notify('用语规则已新增', 'ok');
+    }
+    closeRuleForm();
+    await loadTermRules();
+  } catch (err) {
+    notify(err.message, 'error');
+    markField(err.field);
+  }
+}
+
+// 把命中片段连同前后少量文字一起展示，片段本身高亮
+function excerptHit(text, index, length) {
+  const start = Math.max(0, index - 8);
+  const end = Math.min(text.length, index + length + 8);
+  const prefix = start > 0 ? '…' : '';
+  const suffix = end < text.length ? '…' : '';
+  return `${prefix}${escapeHtml(text.slice(start, index))}<mark>${escapeHtml(text.slice(index, index + length))}</mark>${escapeHtml(text.slice(index + length, end))}${suffix}`;
+}
+
+async function runTermCheck(event) {
+  event.preventDefault();
+  clearNotice();
+  document.querySelectorAll('#term-check-scope.invalid').forEach((node) => node.classList.remove('invalid'));
+
+  const all = el('term-check-all').checked;
+  const languages = all
+    ? []
+    : Array.from(document.querySelectorAll('#term-check-langs input:checked')).map((input) => input.value);
+  if (!all && languages.length === 0) {
+    notify('语言范围不能留空：勾选全部语言，或至少勾选一种语言', 'error');
+    el('term-check-scope').classList.add('invalid');
+    return;
+  }
+
+  const payload = { module: el('term-filter-module').value, languages };
+  try {
+    const result = await request('/api/term-rules/check', { method: 'POST', body: JSON.stringify(payload) });
+    renderTermHits(result);
+  } catch (err) {
+    notify(err.message, 'error');
+    if (err.field === 'languages') el('term-check-scope').classList.add('invalid');
+  }
+}
+
+function renderTermHits(result) {
+  const body = el('term-hit-body');
+  body.innerHTML = result.hits.map((hit) => {
+    const text = excerptHit(hit.translation, hit.index, hit.length);
+    const ruleTag = hit.ruleType === 'unify'
+      ? '<span class="tag term-unify">统一写法</span>'
+      : '<span class="tag term-banned">禁用词</span>';
+    const position = `第 ${hit.index + 1}–${hit.index + hit.length} 个字符`;
+    return `<tr>
+      <td class="mono">${escapeHtml(hit.module)}</td>
+      <td class="mono">${escapeHtml(hit.key)}</td>
+      <td class="mono">${escapeHtml(hit.language)}</td>
+      <td class="hit-excerpt">${text}</td>
+      <td>${ruleTag} <span class="rule-label">${escapeHtml(hit.ruleLabel)}</span></td>
+      <td class="mono">${position}</td>
+      <td>${hit.suggest ? `改为「${escapeHtml(hit.suggest)}」` : '不应出现，需要删除或改写'}</td>
+    </tr>`;
+  }).join('');
+
+  const scopeLabel = result.scope.module ? `模块 ${result.scope.module}` : '全部模块';
+  const summary = el('term-hit-summary');
+  summary.classList.remove('hidden', 'ok');
+  if (result.total > 0) {
+    summary.textContent = `本次检查范围：${scopeLabel}、${result.checkedLanguages} 种语言、${result.checkedEntries} 条文案，共命中 ${result.total} 处，逐条列在下面。`;
+  } else {
+    summary.classList.add('ok');
+    summary.textContent = `本次检查范围：${scopeLabel}、${result.checkedLanguages} 种语言、${result.checkedEntries} 条文案，没有命中任何用语规则。`;
+  }
+  el('term-hit-empty').classList.toggle('hidden', result.total > 0);
+  el('term-hit-empty').textContent = result.total > 0 ? '' : '没有命中任何用语规则';
+}
+
+el('term-new').addEventListener('click', () => {
+  clearNotice();
+  openRuleForm(null);
+});
+el('term-cancel').addEventListener('click', closeRuleForm);
+el('term-form').addEventListener('submit', submitTermRule);
+el('term-check-bar').addEventListener('submit', runTermCheck);
+el('term-type').addEventListener('change', toggleRuleTypeFields);
+el('term-scope-all').addEventListener('change', () => syncTermFormLangs());
+el('term-scope-langs').addEventListener('change', () => syncTermFormLangs());
+
+el('term-check-all').addEventListener('change', () => {
+  const all = el('term-check-all').checked;
+  const inputs = document.querySelectorAll('#term-check-langs input');
+  inputs.forEach((input) => {
+    input.disabled = all;
+    input.checked = false;
+  });
+});
+
+document.addEventListener('click', async (event) => {
+  const node = event.target.closest('button');
+  if (!node) return;
+  if (node.dataset.termEdit) {
+    clearNotice();
+    const rule = state.termRules.find((item) => item.id === node.dataset.termEdit);
+    if (rule) openRuleForm(rule);
+    return;
+  }
+  if (node.dataset.termDelete) {
+    clearNotice();
+    const rule = state.termRules.find((item) => item.id === node.dataset.termDelete);
+    const label = rule ? (rule.type === 'unify' ? `「${rule.from}」→「${rule.to}」` : `禁用词「${rule.term}」`) : '';
+    if (!window.confirm(`确定删除规则 ${label} 吗？`)) return;
+    try {
+      await request(`/api/term-rules/${encodeURIComponent(node.dataset.termDelete)}`, { method: 'DELETE' });
+      if (state.editingRuleId === node.dataset.termDelete) closeRuleForm();
+      notify('用语规则已删除', 'ok');
+      await loadTermRules();
+    } catch (err) {
+      notify(err.message, 'error');
+    }
+  }
+});
+
 el('language-form').addEventListener('submit', submitLanguage);
 el('entry-form').addEventListener('submit', submitEntry);
 el('entry-new').addEventListener('click', () => {
@@ -367,5 +637,5 @@ el('operator').addEventListener('change', () => {
 restoreOperator();
 loadHealth();
 loadLanguages()
-  .then(loadEntries)
+  .then(() => Promise.all([loadEntries(), loadTermRules()]))
   .catch((err) => notify(err.message, 'error'));

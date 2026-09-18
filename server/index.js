@@ -82,6 +82,44 @@ app.delete('/api/entries/:id', (req, res) => {
   }
 });
 
+// 用语规则：两类写法规则的增删改查，以及选定模块与语言范围执行一次检查
+app.get('/api/term-rules', (_req, res) => {
+  res.json(api.listTermRules());
+});
+
+app.post('/api/term-rules', (req, res) => {
+  try {
+    res.status(201).json(api.createTermRule(req.body));
+  } catch (err) {
+    sendError(res, err);
+  }
+});
+
+app.patch('/api/term-rules/:id', (req, res) => {
+  try {
+    res.json(api.updateTermRule(req.params.id, req.body));
+  } catch (err) {
+    sendError(res, err);
+  }
+});
+
+app.delete('/api/term-rules/:id', (req, res) => {
+  try {
+    res.json(api.deleteTermRule(req.params.id));
+  } catch (err) {
+    sendError(res, err);
+  }
+});
+
+// 检查是一次性动作、不落盘，用 POST 把模块与语言范围放在请求体里
+app.post('/api/term-rules/check', (req, res) => {
+  try {
+    res.json(api.runTermCheck(req.body));
+  } catch (err) {
+    sendError(res, err);
+  }
+});
+
 // 未匹配到的接口路径统一返回说明，避免前端拿到一串页面内容
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: { code: 'API_NOT_FOUND', message: '接口不存在', field: '' } });

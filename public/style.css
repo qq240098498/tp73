@@ -376,3 +376,152 @@ label.full input {
   display: flex;
   gap: 10px;
 }
+
+/* ---------- 用语清单 ---------- */
+
+.term-tip {
+  margin: -4px 0 12px;
+  max-width: 960px;
+}
+
+.subhead {
+  margin: 18px 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.check-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f9fafc;
+  margin-bottom: 12px;
+}
+
+.check-bar button[type="submit"] {
+  align-self: center;
+}
+
+.scope-pick,
+.scope-box {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.scope-box {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+}
+
+.scope-pick legend,
+.scope-box legend {
+  padding: 0;
+  float: left;
+  margin-right: 4px;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.lang-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+
+.scope-box .lang-checks {
+  padding-left: 22px;
+}
+
+label.lang-pick {
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink);
+}
+
+label.lang-pick input {
+  width: auto;
+}
+
+.check-summary {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--warn-line);
+  border-radius: 6px;
+  background: var(--warn-bg);
+  color: #8a5a00;
+  font-size: 13px;
+}
+
+.check-summary.ok {
+  border-color: #b7ddc9;
+  background: #eefaf3;
+  color: var(--ok);
+}
+
+.tag.term-unify {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.tag.term-banned {
+  background: #fdeeee;
+  color: var(--danger);
+}
+
+.term-content .arrow {
+  color: var(--ink-soft);
+  margin: 0 2px;
+}
+
+td.hit-excerpt {
+  white-space: normal;
+  min-width: 200px;
+}
+
+td.hit-excerpt mark {
+  background: #ffe58f;
+  color: inherit;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.rule-label {
+  color: var(--ink-soft);
+  font-size: 12.5px;
+}
+
+.scope-cell {
+  white-space: normal;
+}
+
+.term-form {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.term-form .term-type-field {
+  min-width: 320px;
+}
+
+fieldset.invalid {
+  border-color: var(--danger);
+  background: #fdf3f3;
+}
