@@ -237,5 +237,48 @@
       "createdAt": "2026-09-11T06:15:00.000Z",
       "updatedAt": "2026-09-12T03:25:00.000Z"
     }
+  ],
+  "rules": [
+    {
+      "id": "rule-2001",
+      "type": "banned",
+      "phrase": "开小差",
+      "replacement": "",
+      "scope": {
+        "all": true,
+        "languages": []
+      },
+      "note": "口语化说法，统一改成“网络异常，请稍后重试”",
+      "createdAt": "2026-09-12T08:00:00.000Z",
+      "updatedAt": "2026-09-12T08:00:00.000Z"
+    },
+    {
+      "id": "rule-2002",
+      "type": "unify",
+      "phrase": "30 minutes",
+      "replacement": "{minutes}",
+      "scope": {
+        "all": false,
+        "languages": [
+          "en-US"
+        ]
+      },
+      "note": "支付倒计时必须用 {minutes} 占位符，不能写死分钟数",
+      "createdAt": "2026-09-12T08:05:00.000Z",
+      "updatedAt": "2026-09-12T08:05:00.000Z"
+    },
+    {
+      "id": "rule-2003",
+      "type": "unify",
+      "phrase": "帐号",
+      "replacement": "账号",
+      "scope": {
+        "all": true,
+        "languages": []
+      },
+      "note": "简体中文统一用“账号”",
+      "createdAt": "2026-09-12T08:10:00.000Z",
+      "updatedAt": "2026-09-12T08:10:00.000Z"
+    }
   ]
 }

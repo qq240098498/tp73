@@ -1,5 +1,6 @@
 const { load, save } = require('./store');
 const { ApiError, pickText, pickFlag } = require('./errors');
+const { removeLanguageFromScopes } = require('./rules');
 
 // 语言代码按 zh-CN、en-US 这样的写法登记：小写字母起头，短横线之后跟地区或变体
 const CODE_PATTERN = /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;
@@ -130,6 +131,8 @@ function deleteLanguage(code) {
     delete kept[found.code];
     return { ...item, translations: kept };
   });
+  // 指定了这种语言的规则同步把它从生效范围里摘掉，摘光的规则休眠等待重新设置范围
+  removeLanguageFromScopes(data, found.code);
   save(data);
   return { code: found.code, name: found.name };
 }

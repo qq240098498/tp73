@@ -82,6 +82,44 @@ app.delete('/api/entries/:id', (req, res) => {
   }
 });
 
+// 用语规则清单：两类规则（应当统一 / 不能出现）各自带生效语言范围，可随时增删改
+app.get('/api/rules', (_req, res) => {
+  res.json(api.listRules());
+});
+
+app.post('/api/rules', (req, res) => {
+  try {
+    res.status(201).json(api.createRule(req.body));
+  } catch (err) {
+    sendError(res, err);
+  }
+});
+
+app.patch('/api/rules/:id', (req, res) => {
+  try {
+    res.json(api.updateRule(req.params.id, req.body));
+  } catch (err) {
+    sendError(res, err);
+  }
+});
+
+app.delete('/api/rules/:id', (req, res) => {
+  try {
+    res.json(api.deleteRule(req.params.id));
+  } catch (err) {
+    sendError(res, err);
+  }
+});
+
+// 选定模块与语言范围执行一次用语检查，返回逐条命中位置
+app.post('/api/checks', (req, res) => {
+  try {
+    res.json(api.runCheck(req.body));
+  } catch (err) {
+    sendError(res, err);
+  }
+});
+
 // 未匹配到的接口路径统一返回说明，避免前端拿到一串页面内容
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: { code: 'API_NOT_FOUND', message: '接口不存在', field: '' } });

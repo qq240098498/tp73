@@ -91,6 +91,96 @@
         </div>
       </form>
     </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>用语清单</h2>
+        <div class="filters">
+          <button type="button" id="rule-refresh" class="ghost">刷新</button>
+          <button type="button" id="rule-new">新建规则</button>
+        </div>
+      </div>
+      <div class="panel-tip rule-tip">维护两类用语规则：“应当统一”写清常见写法与应当改成的写法，“不能出现”列出一律禁用的词语；每条规则都可以指定全部语言或其中几种语言，随时可以增删改。保存时若规则不成立会当场拒绝（例如两种写法一模一样、生效范围里的语言没有登记过、同一条译文同时被两类规则命中）</div>
+
+      <div class="table-wrap">
+        <table class="grid">
+          <thead>
+            <tr>
+              <th>类型</th>
+              <th>命中写法 / 词语</th>
+              <th>应当改成</th>
+              <th>生效范围</th>
+              <th>备注</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="rule-body"></tbody>
+        </table>
+      </div>
+      <p class="empty-tip hidden" id="rule-empty">还没有任何用语规则</p>
+
+      <form class="rule-form hidden" id="rule-form" autocomplete="off">
+        <h3 id="rule-form-title">新增用语规则</h3>
+        <div class="form-row">
+          <label data-field="type">类型
+            <select id="rule-type">
+              <option value="unify">应当统一（出现常见写法时改成统一写法）</option>
+              <option value="banned">不能出现（一律禁用的词语）</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-row">
+          <label data-field="phrase"><span id="rule-phrase-label">现在常见的写法</span><input id="rule-phrase" placeholder="例如 帐号" maxlength="60"></label>
+          <label data-field="replacement"><span id="rule-replacement-label">应当改成的写法</span><input id="rule-replacement" placeholder="例如 账号" maxlength="60"></label>
+        </div>
+        <div class="rule-scope" data-field="scope">
+          <span class="scope-title">生效范围</span>
+          <label class="check"><input type="radio" name="rule-scope-mode" value="all" id="rule-scope-all" checked> 全部语言</label>
+          <label class="check"><input type="radio" name="rule-scope-mode" value="pick" id="rule-scope-pick"> 指定语言</label>
+          <div class="scope-langs" id="rule-scope-languages"></div>
+        </div>
+        <label class="full" data-field="note">备注（可选）<input id="rule-note" placeholder="这条规则的来由或适用场景" maxlength="120"></label>
+        <div class="form-actions">
+          <button type="submit">保存规则</button>
+          <button type="button" id="rule-cancel" class="ghost">取消</button>
+        </div>
+      </form>
+
+      <div class="check-bar">
+        <h3>执行用语检查</h3>
+        <div class="check-controls" data-field="checkScope">
+          <label class="check-field">模块
+            <select id="check-module"><option value="">全部模块</option></select>
+          </label>
+          <span class="scope-title">语言范围</span>
+          <label class="check"><input type="radio" name="check-scope-mode" value="all" checked> 全部语言</label>
+          <label class="check"><input type="radio" name="check-scope-mode" value="pick"> 指定语言</label>
+          <div class="scope-langs" id="check-scope-languages"></div>
+          <button type="button" id="check-run">开始检查</button>
+        </div>
+      </div>
+
+      <div class="check-result hidden" id="check-result">
+        <div class="check-summary" id="check-summary"></div>
+        <div class="table-wrap">
+          <table class="grid check-grid">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>类型</th>
+                <th>文案键</th>
+                <th>语言</th>
+                <th>命中片段</th>
+                <th>所在译文</th>
+                <th>命中规则</th>
+                <th>处理建议</th>
+              </tr>
+            </thead>
+            <tbody id="check-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
   </main>
 
   <script src="app.js"></script>

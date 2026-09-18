@@ -8,6 +8,8 @@ const TEMP_FILE = path.join(DATA_DIR, 'db.json.tmp');
 const MAX_TRANSLATION_LENGTH = 200;
 const MAX_NOTE_LENGTH = 200;
 const MAX_OPERATOR_LENGTH = 40;
+const MAX_RULE_TEXT_LENGTH = 60;
+const MAX_RULE_NOTE_LENGTH = 120;
 const UNNAMED = '未署名';
 
 // 初始数据：四种语言、四个模块的十五条文案。繁体与英语故意留了几条没译，
@@ -229,6 +231,41 @@ function seedData() {
         updatedAt: '2026-09-12T03:25:00.000Z',
       },
     ],
+    // 用语规则：第一条禁用词正好命中 common.error.network 的简体译文，
+    // 第二条应当统一命中 en-US 里写死的 30 minutes（占位符被写丢了），
+    // 第三条暂时没有命中，留作零命中示例
+    rules: [
+      {
+        id: 'rule-2001',
+        type: 'banned',
+        phrase: '开小差',
+        replacement: '',
+        scope: { all: true, languages: [] },
+        note: '口语化说法，统一改成“网络异常，请稍后重试”',
+        createdAt: '2026-09-12T08:00:00.000Z',
+        updatedAt: '2026-09-12T08:00:00.000Z',
+      },
+      {
+        id: 'rule-2002',
+        type: 'unify',
+        phrase: '30 minutes',
+        replacement: '{minutes}',
+        scope: { all: false, languages: ['en-US'] },
+        note: '支付倒计时必须用 {minutes} 占位符，不能写死分钟数',
+        createdAt: '2026-09-12T08:05:00.000Z',
+        updatedAt: '2026-09-12T08:05:00.000Z',
+      },
+      {
+        id: 'rule-2003',
+        type: 'unify',
+        phrase: '帐号',
+        replacement: '账号',
+        scope: { all: true, languages: [] },
+        note: '简体中文统一用“账号”',
+        createdAt: '2026-09-12T08:10:00.000Z',
+        updatedAt: '2026-09-12T08:10:00.000Z',
+      },
+    ],
   };
 }
 
@@ -263,6 +300,31 @@ function normalizeEntry(item, fallbackIndex) {
     translations,
     note: typeof source.note === 'string' ? source.note : '',
     updatedBy: typeof source.updatedBy === 'string' && source.updatedBy.trim() ? source.updatedBy.trim() : UNNAMED,
+    createdAt,
+    updatedAt: typeof source.updatedAt === 'string' && source.updatedAt ? source.updatedAt : createdAt,
+  };
+}
+
+// 把单条用语规则整理成固定结构：类型只认 unify / banned，范围只留两种形态
+function normalizeRule(item, fallbackIndex) {
+  const source = item && typeof item === 'object' ? item : {};
+  const createdAt = typeof source.createdAt === 'string' && source.createdAt ? source.createdAt : new Date().toISOString();
+  const type = source.type === 'banned' ? 'banned' : 'unify';
+  const scopeSource = source.scope && typeof source.scope === 'object' && !Array.isArray(source.scope) ? source.scope : {};
+  const languages = Array.isArray(scopeSource.languages)
+    ? scopeSource.languages
+        .filter((code) => typeof code === 'string' && code.trim())
+        .map((code) => code.trim())
+    : [];
+  // all 为真时语言列表一律清空，全部语言与指定语言只保留一种表达
+  const all = scopeSource.all === true;
+  return {
+    id: typeof source.id === 'string' && source.id ? source.id : `rule-restored-${fallbackIndex + 1}`,
+    type,
+    phrase: typeof source.phrase === 'string' ? source.phrase : '',
+    replacement: type === 'unify' && typeof source.replacement === 'string' ? source.replacement : '',
+    scope: { all, languages: all ? [] : Array.from(new Set(languages)) },
+    note: typeof source.note === 'string' ? source.note : '',
     createdAt,
     updatedAt: typeof source.updatedAt === 'string' && source.updatedAt ? source.updatedAt : createdAt,
   };
@@ -311,7 +373,26 @@ function normalize(raw) {
         })
     : [];
 
-  return { languages: dedupedLanguages, entries };
+  // 旧数据文件里没有 rules 这一段时补上种子规则，显式写成空数组时尊重用户的清空动作
+  const rules = Array.isArray(source.rules)
+    ? source.rules.map((item, index) => normalizeRule(item, index)).filter((item) => item.id)
+    : seed.rules;
+
+  // 规则 id 去重；生效范围里已经不再登记的语言直接摘掉。
+  // 摘光后保留为空范围（这条规则暂时不命中任何语言），不擅自改成全部语言，
+  // 用户下次编辑这条规则时会被要求重选语言或改成全部语言
+  const seenRuleIds = new Set();
+  const dedupedRules = [];
+  rules.forEach((item) => {
+    if (seenRuleIds.has(item.id)) return;
+    seenRuleIds.add(item.id);
+    if (!item.scope.all) {
+      item.scope.languages = item.scope.languages.filter((code) => known.has(code));
+    }
+    dedupedRules.push(item);
+  });
+
+  return { languages: dedupedLanguages, entries, rules: dedupedRules };
 }
 
 // 读取数据文件：文件缺失或内容损坏时回落到初始数据并立刻补写
@@ -341,9 +422,12 @@ module.exports = {
   normalize,
   normalizeLanguage,
   normalizeEntry,
+  normalizeRule,
   MAX_TRANSLATION_LENGTH,
   MAX_NOTE_LENGTH,
   MAX_OPERATOR_LENGTH,
+  MAX_RULE_TEXT_LENGTH,
+  MAX_RULE_NOTE_LENGTH,
   UNNAMED,
   DATA_FILE,
 };

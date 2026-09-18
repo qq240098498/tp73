@@ -376,3 +376,199 @@ label.full input {
   display: flex;
   gap: 10px;
 }
+
+/* ===== 用语清单 ===== */
+
+.rule-tip {
+  margin: -4px 0 12px;
+}
+
+.rule-form {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tag.unify {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.tag.banned {
+  background: #fdeeee;
+  color: var(--danger);
+}
+
+.tag.scope {
+  margin: 1px 3px 1px 0;
+  background: #eef0f3;
+  color: var(--ink-soft);
+}
+
+.tag.scope.all {
+  background: #f1ecfb;
+  color: #6b46c1;
+}
+
+.tag.dormant {
+  background: #fdf3f3;
+  color: var(--danger);
+}
+
+.rule-scope {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fbfcfd;
+}
+
+.rule-scope.invalid {
+  border-color: var(--danger);
+  background: #fdf3f3;
+}
+
+.scope-title {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.scope-langs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.scope-langs label {
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.scope-langs input {
+  width: auto;
+}
+
+.scope-langs.disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.check-bar {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line);
+}
+
+.check-bar h3 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.check-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+.check-controls.invalid {
+  border-color: var(--danger);
+  background: #fdf3f3;
+}
+
+.check-field {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.check-field select {
+  min-width: 130px;
+}
+
+.check-result {
+  margin-top: 14px;
+}
+
+.check-summary {
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.check-summary strong {
+  color: var(--ink);
+}
+
+.check-summary .bad-num {
+  color: var(--danger);
+  font-size: 15px;
+}
+
+.check-summary .ok-num {
+  color: var(--ok);
+  font-size: 15px;
+}
+
+table.check-grid {
+  min-width: 880px;
+}
+
+table.check-grid td {
+  max-width: none;
+  white-space: normal;
+  word-break: break-word;
+}
+
+td.col-key {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+td.col-translation {
+  min-width: 200px;
+  max-width: 320px;
+}
+
+mark.hit {
+  padding: 0 2px;
+  border-radius: 2px;
+  background: #ffe08a;
+  color: #5c3d00;
+}
+
+mark.hit.banned {
+  background: #f8c4c4;
+  color: #7a1f1f;
+}
+
+tr.finding-banned {
+  background: #fff8f8;
+}
+
+.rule-ref {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.rule-ref .mono {
+  color: var(--ink);
+}
